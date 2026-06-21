@@ -1,0 +1,987 @@
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Growing Minds Youth Initiative</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { heading: ['Fredoka One', 'cursive'], body: ['Nunito', 'sans-serif'] },
+      colors: { leaf: { 50:'#f0fdf4', 100:'#dcfce7', 200:'#bbf7d0', 300:'#86efac', 400:'#4ade80', 500:'#22c55e', 600:'#16a34a', 700:'#15803d', 800:'#166534', 900:'#14532d' }, warm: { 50:'#fffbeb', 100:'#fef3c7', 200:'#fde68a', 300:'#fcd34d', 400:'#fbbf24', 500:'#f59e0b', 600:'#d97706' }, sky: { 50:'#f0f9ff', 100:'#e0f2fe', 200:'#bae6fd', 300:'#7dd3fc', 400:'#38bdf8', 500:'#0ea5e9' }, heart: { 400:'#fb7185', 500:'#f43f5e', 600:'#e11d48' } }
+    }
+  }
+}
+</script>
+
+<!-- FIREBASE SDKs (Required for Cloud) -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+
+<style>
+  * { scroll-behavior: smooth; }
+  body { font-family: 'Nunito', sans-serif; }
+  .logo-watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 700px; height: 700px; background-image: url('https://z-cdn-media.chatglm.cn/files/67003287-251b-4aa0-ae60-d50c6d75edf8.jpg?auth_key=1881761223-3eb3da5f307a4922bb00bbfea9ba7c78-0-0638d1d14e11264b54808f421fe4806b'); background-size: contain; background-repeat: no-repeat; background-position: center; opacity: 0.04; z-index: 0; pointer-events: none; }
+  @keyframes floatLeaf { 0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.7; } 25% { transform: translateY(-30px) rotate(15deg) scale(1.05); opacity: 0.9; } 50% { transform: translateY(-10px) rotate(-10deg) scale(0.95); opacity: 0.6; } 75% { transform: translateY(-40px) rotate(20deg) scale(1.02); opacity: 0.8; } 100% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.7; } }
+  .float-leaf { animation: floatLeaf 6s ease-in-out infinite; }
+  .float-leaf-2 { animation: floatLeaf 8s ease-in-out infinite 1s; }
+  .float-leaf-3 { animation: floatLeaf 7s ease-in-out infinite 2s; }
+  .float-leaf-4 { animation: floatLeaf 9s ease-in-out infinite 0.5s; }
+  @keyframes bounceIn { 0%{transform:scale(.3);opacity:0}50%{transform:scale(1.05)}70%{transform:scale(.9)}100%{transform:scale(1);opacity:1} }
+  .bounce-in { animation: bounceIn 0.8s ease-out forwards; }
+  @keyframes slideUp { from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1} }
+  .slide-up { animation: slideUp 0.7s ease-out forwards; }
+  @keyframes pulseHeart { 0%,100%{transform:scale(1)}50%{transform:scale(1.15)} }
+  .pulse-heart { animation: pulseHeart 1.5s ease-in-out infinite; }
+  @keyframes wiggle { 0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)} }
+  .wiggle:hover { animation: wiggle 0.4s ease-in-out infinite; }
+  @keyframes growPlant { 0%{transform:scaleY(0);transform-origin:bottom}100%{transform:scaleY(1);transform-origin:bottom} }
+  .grow-plant { animation: growPlant 1.2s ease-out forwards; }
+  @keyframes sparkle { 0%,100%{opacity:0;transform:scale(0) rotate(0deg)}50%{opacity:1;transform:scale(1) rotate(180deg)} }
+  .sparkle { animation: sparkle 2s ease-in-out infinite; }
+  @keyframes wave { 0%{transform:rotate(0)}10%{transform:rotate(14deg)}20%{transform:rotate(-8deg)}30%{transform:rotate(14deg)}40%{transform:rotate(-4deg)}50%{transform:rotate(10deg)}60%{transform:rotate(0)}100%{transform:rotate(0)} }
+  .wave-hand { animation: wave 2.5s ease-in-out infinite; transform-origin: 70% 70%; display: inline-block; }
+  .reveal { opacity:0; transform:translateY(40px); transition:all 0.8s cubic-bezier(0.16,1,0.3,1); }
+  .reveal.active { opacity:1; transform:translateY(0); }
+  .nav-link { position: relative; }
+  .nav-link::after { content:''; position:absolute; bottom:-4px; left:50%; width:0; height:3px; background:#16a34a; border-radius:2px; transition:all .3s; transform:translateX(-50%); }
+  .nav-link:hover::after, .nav-link.active::after { width:80%; }
+  .card-lift { transition: all 0.4s cubic-bezier(0.16,1,0.3,1); }
+  .card-lift:hover { transform:translateY(-8px); box-shadow:0 20px 40px rgba(22,163,74,0.15); }
+  .amount-btn { transition:all .3s; border:2px solid #dcfce7; }
+  .amount-btn.selected { background:#16a34a; color:white; border-color:#16a34a; transform:scale(1.08); box-shadow:0 4px 15px rgba(22,163,74,0.4); }
+  .amount-btn:hover:not(.selected) { border-color:#16a34a; background:#f0fdf4; }
+  ::-webkit-scrollbar { width:8px; }
+  ::-webkit-scrollbar-track { background:#f0fdf4; }
+  ::-webkit-scrollbar-thumb { background:#86efac; border-radius:4px; }
+  ::-webkit-scrollbar-thumb:hover { background:#4ade80; }
+  @keyframes toastIn { from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1} }
+  @keyframes toastOut { from{transform:translateX(0);opacity:1}to{transform:translateX(100%);opacity:0} }
+  .toast-in { animation:toastIn .4s ease-out forwards; }
+  .toast-out { animation:toastOut .4s ease-in forwards; }
+  @keyframes fillBar { from{width:0} }
+  .progress-fill { animation:fillBar 2s ease-out forwards; }
+  @keyframes confettiFall { 0%{transform:translateY(-100vh) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0} }
+  .confetti-piece { position:fixed; top:-10px; z-index:9999; pointer-events:none; }
+  .mobile-menu { transform:translateX(100%); transition:transform .4s cubic-bezier(0.16,1,0.3,1); }
+  .mobile-menu.open { transform:translateX(0); }
+  .modal-overlay { opacity:0; pointer-events:none; transition:opacity .3s; }
+  .modal-overlay.open { opacity:1; pointer-events:auto; }
+  .modal-overlay.open .modal-content { transform:scale(1) translateY(0); opacity:1; }
+  .modal-content { transform:scale(.95) translateY(20px); opacity:0; transition:all .4s cubic-bezier(0.16,1,0.3,1); }
+  .upload-zone { border:2px dashed #bbf7d0; transition:all .3s; cursor:pointer; }
+  .upload-zone:hover, .upload-zone.dragover { border-color:#16a34a; background:#f0fdf4; }
+  .upload-zone img { object-fit:cover; }
+  .gallery-thumb { transition:all .3s; }
+  .gallery-thumb:hover { transform:scale(1.08); box-shadow:0 8px 25px rgba(0,0,0,0.15); }
+  .lightbox { opacity:0; pointer-events:none; transition:opacity .3s; }
+  .lightbox.open { opacity:1; pointer-events:auto; }
+  .delete-confirm { transform:scale(0); transition:transform .3s cubic-bezier(0.34,1.56,0.64,1); }
+  .delete-confirm.show { transform:scale(1); }
+  .gallery-modal { opacity:0; pointer-events:none; transition:opacity .3s; }
+  .gallery-modal.open { opacity:1; pointer-events:auto; }
+  .gallery-modal.open .gallery-modal-content { transform:translateY(0); opacity:1; }
+  .gallery-modal-content { transform:translateY(40px); opacity:0; transition:all .4s cubic-bezier(0.16,1,0.3,1); }
+  .img-overlay { opacity:0; transition:opacity .3s; }
+  .img-group:hover .img-overlay { opacity:1; }
+  .admin-only { transition: opacity 0.3s ease; }
+</style>
+</head>
+<body class="bg-white text-gray-800 overflow-x-hidden">
+
+<div class="logo-watermark"></div>
+
+<!-- Floating Leaves -->
+<div class="fixed pointer-events-none z-0">
+  <svg class="float-leaf absolute top-20 left-10 w-12 h-12 text-leaf-300 opacity-40" viewBox="0 0 48 48" fill="currentColor"><path d="M24 4C24 4 8 16 8 28c0 8 7 16 16 16s16-8 16-16C40 16 24 4 24 4z"></path><line x1="24" y1="10" x2="24" y2="44" stroke="white" stroke-width="1.5" opacity="0.5"></line></svg>
+  <svg class="float-leaf-2 absolute top-40 right-20 w-10 h-10 text-leaf-400 opacity-30" viewBox="0 0 48 48" fill="currentColor"><path d="M24 4C24 4 8 16 8 28c0 8 7 16 16 16s16-8 16-16C40 16 24 4 24 4z"></path></svg>
+  <svg class="float-leaf-3 absolute bottom-40 left-1/4 w-8 h-8 text-warm-400 opacity-30" viewBox="0 0 48 48" fill="currentColor"><path d="M24 4C24 4 8 16 8 28c0 8 7 16 16 16s16-8 16-16C40 16 24 4 24 4z"></path></svg>
+  <svg class="float-leaf-4 absolute top-2/3 right-1/3 w-14 h-14 text-leaf-200 opacity-25" viewBox="0 0 48 48" fill="currentColor"><path d="M24 4C24 4 8 16 8 28c0 8 7 16 16 16s16-8 16-16C40 16 24 4 24 4z"></path></svg>
+</div>
+
+<!-- Toast Container -->
+<div id="toastContainer" class="fixed top-24 right-6 z-[9999] flex flex-col gap-3"></div>
+
+<!-- Navigation -->
+<nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-500 bg-white/80 backdrop-blur-lg border-b border-leaf-100 shadow-md">
+  <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+    <a href="#home" class="flex items-center gap-3 group">
+      <div class="relative w-12 h-12 rounded-full overflow-hidden border-2 border-leaf-400 group-hover:border-leaf-600 transition-colors shadow-md group-hover:shadow-lg">
+        <img src="https://z-cdn-media.chatglm.cn/files/67003287-251b-4aa0-ae60-d50c6d75edf8.jpg?auth_key=1881761223-3eb3da5f307a4922bb00bbfea9ba7c78-0-0638d1d14e11264b54808f421fe4806b" alt="GMYI Logo" class="w-full h-full object-cover">
+      </div>
+      <div class="hidden sm:block">
+        <p class="font-heading text-leaf-800 text-sm leading-tight">Growing Minds</p>
+        <p class="text-[10px] text-leaf-600 font-semibold tracking-wide uppercase">Youth Initiative</p>
+      </div>
+    </a>
+    <div class="hidden md:flex items-center gap-8">
+      <a href="#about" class="nav-link text-sm font-semibold text-gray-600 hover:text-leaf-700 transition-colors">About</a>
+      <a href="#campaigns" class="nav-link text-sm font-semibold text-gray-600 hover:text-leaf-700 transition-colors active">Campaigns</a>
+      <a href="#donate" class="nav-link text-sm font-semibold text-gray-600 hover:text-leaf-700 transition-colors">Donate</a>
+      <a href="#suggestions" class="nav-link text-sm font-semibold text-gray-600 hover:text-leaf-700 transition-colors">Suggestions</a>
+      <a href="#contact" class="nav-link text-sm font-semibold text-gray-600 hover:text-leaf-700 transition-colors">Contact</a>
+      
+      <!-- 🔐 ADMIN LOGIN BUTTON -->
+      <button id="adminLoginBtn" onclick="promptAdminLogin()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-1.5">
+        🔐 Admin
+      </button>
+      
+      <a href="#donate" class="bg-leaf-600 hover:bg-leaf-700 text-white px-5 py-2.5 rounded-full text-sm font-bold transition-all hover:scale-105 hover:shadow-lg hover:shadow-leaf-200">💚 Support Us</a>
+    </div>
+    <button id="mobileMenuBtn" class="md:hidden p-2 rounded-lg hover:bg-leaf-50 transition-colors"><i data-lucide="menu" class="w-6 h-6 text-leaf-700"></i></button>
+  </div>
+</nav>
+
+<!-- Mobile Menu -->
+<div id="mobileMenu" class="mobile-menu fixed inset-0 z-[60] bg-white/95 backdrop-blur-xl flex flex-col">
+  <div class="flex items-center justify-between px-6 py-4 border-b border-leaf-100">
+    <p class="font-heading text-leaf-800">Menu</p>
+    <button id="closeMobileMenu" class="p-2 rounded-lg hover:bg-leaf-50 transition-colors"><i data-lucide="x" class="w-6 h-6 text-leaf-700"></i></button>
+  </div>
+  <div class="flex flex-col gap-1 p-6 flex-1">
+    <a href="#about" class="mobile-nav-link flex items-center gap-4 px-4 py-4 rounded-2xl text-lg font-semibold text-gray-700 hover:bg-leaf-50 hover:text-leaf-700 transition-all"><i data-lucide="info" class="w-5 h-5"></i> About Us</a>
+    <a href="#campaigns" class="mobile-nav-link flex items-center gap-4 px-4 py-4 rounded-2xl text-lg font-semibold text-gray-700 hover:bg-leaf-50 hover:text-leaf-700 transition-all"><i data-lucide="megaphone" class="w-5 h-5"></i> Campaigns</a>
+    <a href="#donate" class="mobile-nav-link flex items-center gap-4 px-4 py-4 rounded-2xl text-lg font-semibold text-gray-700 hover:bg-leaf-50 hover:text-leaf-700 transition-all"><i data-lucide="heart" class="w-5 h-5"></i> Donate</a>
+    <a href="#suggestions" class="mobile-nav-link flex items-center gap-4 px-4 py-4 rounded-2xl text-lg font-semibold text-gray-700 hover:bg-leaf-50 hover:text-leaf-700 transition-all"><i data-lucide="lightbulb" class="w-5 h-5"></i> Suggestions</a>
+    <a href="#contact" class="mobile-nav-link flex items-center gap-4 px-4 py-4 rounded-2xl text-lg font-semibold text-gray-700 hover:bg-leaf-50 hover:text-leaf-700 transition-all"><i data-lucide="mail" class="w-5 h-5"></i> Contact</a>
+  </div>
+  <div class="p-6"><a href="#donate" class="mobile-nav-link block text-center bg-leaf-600 text-white px-6 py-4 rounded-2xl font-bold text-lg hover:bg-leaf-700 transition-colors">💚 Support Us</a></div>
+</div>
+
+<!-- HERO -->
+<section id="home" class="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+  <div class="absolute inset-0 bg-gradient-to-br from-leaf-50 via-white to-warm-50"></div>
+  <div class="absolute top-20 left-10 w-72 h-72 bg-leaf-200/30 rounded-full blur-3xl"></div>
+  <div class="absolute bottom-20 right-10 w-96 h-96 bg-warm-200/20 rounded-full blur-3xl"></div>
+  <div id="heroParticles" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
+  <div class="relative z-10 max-w-6xl mx-auto px-6 text-center">
+    <div class="bounce-in mb-8">
+      <div class="relative inline-block">
+        <div class="w-40 h-40 md:w-52 md:h-52 mx-auto rounded-full overflow-hidden border-4 border-leaf-300 shadow-xl shadow-leaf-200/50 hover:scale-105 transition-transform duration-500 cursor-pointer" onclick="spinLogo(this)">
+          <img src="https://z-cdn-media.chatglm.cn/files/67003287-251b-4aa0-ae60-d50c6d75edf8.jpg?auth_key=1881761223-3eb3da5f307a4922bb00bbfea9ba7c78-0-0638d1d14e11264b54808f421fe4806b" alt="GMYI Logo" class="w-full h-full object-cover" style="transition:transform .8s cubic-bezier(.16,1,.3,1)">
+        </div>
+        <svg class="sparkle absolute -top-2 -right-2 w-6 h-6 text-warm-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0L14.59 8.41L23 12L14.59 15.59L12 24L9.41 15.59L1 12L9.41 8.41Z"></path></svg>
+        <svg class="sparkle absolute -bottom-1 -left-3 w-5 h-5 text-leaf-400" style="animation-delay:.7s" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0L14.59 8.41L23 12L14.59 15.59L12 24L9.41 15.59L1 12L9.41 8.41Z"></path></svg>
+      </div>
+    </div>
+    <div class="slide-up mb-4" style="animation-delay:.2s"><span class="wave-hand text-4xl">👋</span></div>
+    <h1 class="slide-up font-heading text-4xl md:text-6xl lg:text-7xl text-leaf-900 mb-6 leading-tight" style="animation-delay:.3s">Growing Minds<br><span class="text-leaf-600">Youth Initiative</span></h1>
+    <p class="slide-up text-lg md:text-xl text-gray-600 max-w-2xl mx-auto mb-10 font-semibold leading-relaxed" style="animation-delay:.5s">Nurturing hope, empowering lives. We believe every child deserves access to basic essentials and the opportunity to grow into their fullest potential.</p>
+    <div class="slide-up flex flex-col sm:flex-row items-center justify-center gap-4" style="animation-delay:.7s">
+      <a href="#donate" class="group bg-leaf-600 hover:bg-leaf-700 text-white px-8 py-4 rounded-full font-bold text-lg transition-all hover:scale-105 hover:shadow-xl hover:shadow-leaf-200 flex items-center gap-2"><span class="pulse-heart inline-block">💚</span> Donate Now <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-1 transition-transform"></i></a>
+      <a href="#about" class="group bg-white hover:bg-leaf-50 text-leaf-800 px-8 py-4 rounded-full font-bold text-lg transition-all hover:scale-105 border-2 border-leaf-200 hover:border-leaf-400 flex items-center gap-2 shadow-sm">Learn More <i data-lucide="chevron-down" class="w-5 h-5 group-hover:translate-y-0.5 transition-transform"></i></a>
+    </div>
+    <div class="slide-up mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto" style="animation-delay:.9s">
+      <div class="bg-white/70 backdrop-blur-sm rounded-2xl p-4 border border-leaf-100 card-lift cursor-default"><p class="font-heading text-2xl md:text-3xl text-leaf-700 counter" data-target="500" data-counted="true">500+</p><p class="text-xs text-gray-500 font-semibold mt-1">Lives Impacted</p></div>
+      <div class="bg-white/70 backdrop-blur-sm rounded-2xl p-4 border border-leaf-100 card-lift cursor-default"><p class="font-heading text-2xl md:text-3xl text-warm-600 counter" data-target="12" data-counted="true">12+</p><p class="text-xs text-gray-500 font-semibold mt-1">Campaigns Run</p></div>
+      <div class="bg-white/70 backdrop-blur-sm rounded-2xl p-4 border border-leaf-100 card-lift cursor-default"><p class="font-heading text-2xl md:text-3xl text-sky-600 counter" data-target="50" data-counted="true">50+</p><p class="text-xs text-gray-500 font-semibold mt-1">Volunteers</p></div>
+      <div class="bg-white/70 backdrop-blur-sm rounded-2xl p-4 border border-leaf-100 card-lift cursor-default"><p class="font-heading text-2xl md:text-3xl text-heart-500 counter" data-target="3" data-counted="true">3+</p><p class="text-xs text-gray-500 font-semibold mt-1">Communities</p></div>
+    </div>
+  </div>
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce"><p class="text-xs font-semibold text-leaf-500 tracking-widest uppercase">Scroll</p><i data-lucide="chevron-down" class="w-5 h-5 text-leaf-400"></i></div>
+</section>
+
+<!-- ABOUT -->
+<section id="about" class="relative py-24 md:py-32 bg-white">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center mb-16 reveal">
+      <span class="inline-block bg-leaf-100 text-leaf-700 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase mb-4">Who We Are</span>
+      <h2 class="font-heading text-3xl md:text-5xl text-leaf-900 mb-4">About Our Initiative</h2>
+      <div class="w-20 h-1.5 bg-gradient-to-r from-leaf-400 to-leaf-600 mx-auto rounded-full"></div>
+    </div>
+    <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+      <div class="reveal relative">
+        <div class="relative bg-gradient-to-br from-leaf-50 to-leaf-100 rounded-3xl p-8 md:p-12 overflow-hidden">
+          <div class="absolute top-4 right-4 w-20 h-20 bg-leaf-200/40 rounded-full blur-xl"></div>
+          <div class="absolute bottom-4 left-4 w-16 h-16 bg-warm-200/40 rounded-full blur-xl"></div>
+          <svg viewBox="0 0 400 400" class="w-full max-w-sm mx-auto drop-shadow-lg" xmlns="http://www.w3.org/2000/svg"><ellipse cx="200" cy="360" rx="140" ry="20" fill="#bbf7d0"></ellipse><rect x="160" y="210" width="80" height="100" rx="30" fill="#4ade80"></rect><rect x="120" y="220" width="45" height="20" rx="10" fill="#fcd34d" transform="rotate(-15,142,230)"></rect><rect x="235" y="220" width="45" height="20" rx="10" fill="#fcd34d" transform="rotate(15,258,230)"></rect><circle cx="118" cy="218" r="12" fill="#fcd34d"></circle><circle cx="282" cy="218" r="12" fill="#fcd34d"></circle><rect x="170" y="295" width="22" height="55" rx="10" fill="#166534"></rect><rect x="208" y="295" width="22" height="55" rx="10" fill="#166534"></rect><ellipse cx="181" cy="352" rx="18" ry="10" fill="#15803d"></ellipse><ellipse cx="219" cy="352" rx="18" ry="10" fill="#15803d"></ellipse><circle cx="200" cy="170" r="55" fill="#fcd34d"></circle><path d="M150 155 Q155 110 200 105 Q245 110 250 155" fill="#4a2c0a"></path><path d="M148 160 Q145 140 155 125" stroke="#4a2c0a" stroke-width="8" fill="none" stroke-linecap="round"></path><path d="M252 160 Q255 140 245 125" stroke="#4a2c0a" stroke-width="8" fill="none" stroke-linecap="round"></path><ellipse cx="182" cy="168" rx="8" ry="9" fill="white"></ellipse><ellipse cx="218" cy="168" rx="8" ry="9" fill="white"></ellipse><circle cx="184" cy="170" r="5" fill="#1a1a1a"></circle><circle cx="220" cy="170" r="5" fill="#1a1a1a"></circle><circle cx="186" cy="168" r="2" fill="white"></circle><circle cx="222" cy="168" r="2" fill="white"></circle><path d="M185 190 Q200 205 215 190" stroke="#c2410c" stroke-width="3" fill="none" stroke-linecap="round"></path><circle cx="168" cy="185" r="8" fill="#fca5a5" opacity="0.5"></circle><circle cx="232" cy="185" r="8" fill="#fca5a5" opacity="0.5"></circle><g transform="translate(100,180)" class="grow-plant"><path d="M20 40 Q0 20 10 0 Q20 20 20 40Z" fill="#22c55e"></path><line x1="20" y1="40" x2="12" y2="8" stroke="#15803d" stroke-width="1.5"></line><path d="M20 35 Q35 15 30 -5 Q22 15 20 35Z" fill="#4ade80"></path><line x1="20" y1="35" x2="28" y2="2" stroke="#16a34a" stroke-width="1.5"></line></g><g class="pulse-heart" transform="translate(225,95)"><path d="M12 4C12 4 2 0 2 8C2 14 12 20 12 20C12 20 22 14 22 8C22 0 12 4 12 4Z" fill="#f43f5e"></path></g><g class="sparkle" transform="translate(80,100)"><path d="M8 0L10 6L16 8L10 10L8 16L6 10L0 8L6 6Z" fill="#fbbf24"></path></g><g class="sparkle" style="animation-delay:1s" transform="translate(300,120)"><path d="M6 0L8 4L12 6L8 8L6 12L4 8L0 6L4 4Z" fill="#38bdf8"></path></g></svg>
+        </div>
+      </div>
+      <div class="reveal" style="transition-delay:.2s">
+        <h3 class="font-heading text-2xl md:text-3xl text-leaf-900 mb-6">Planting Seeds of Change, One Child at a Time 🌱</h3>
+        <p class="text-gray-600 leading-relaxed mb-6"><strong class="text-leaf-700">Growing Minds Youth Initiative</strong> is a grassroots NGO born from the simple belief that no child should go without basic essentials. Founded by passionate young people, we work directly in underserved communities to provide food, clothing, school supplies, and hygiene products to children and families in need.</p>
+        <p class="text-gray-600 leading-relaxed mb-8">Though we are still a small initiative, our vision is mighty — to grow into a movement that ensures every child has the foundation they need to learn, play, and dream big.</p>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div class="bg-leaf-50 rounded-2xl p-5 border border-leaf-100 card-lift"><div class="w-10 h-10 bg-leaf-200 rounded-xl flex items-center justify-center mb-3"><i data-lucide="target" class="w-5 h-5 text-leaf-700"></i></div><h4 class="font-bold text-leaf-800 mb-1">Our Mission</h4><p class="text-sm text-gray-600">To deliver basic essentials to poor and vulnerable children, restoring dignity and hope.</p></div>
+          <div class="bg-warm-50 rounded-2xl p-5 border border-warm-100 card-lift"><div class="w-10 h-10 bg-warm-200 rounded-xl flex items-center justify-center mb-3"><i data-lucide="eye" class="w-5 h-5 text-warm-700"></i></div><h4 class="font-bold text-warm-800 mb-1">Our Vision</h4><p class="text-sm text-gray-600">A world where every child's basic needs are met, enabling them to thrive and grow.</p></div>
+        </div>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <span class="wiggle inline-flex items-center gap-1.5 bg-leaf-100 text-leaf-700 px-4 py-2 rounded-full text-sm font-bold cursor-default">🤝 Compassion</span>
+          <span class="wiggle inline-flex items-center gap-1.5 bg-sky-100 text-sky-700 px-4 py-2 rounded-full text-sm font-bold cursor-default">✨ Transparency</span>
+          <span class="wiggle inline-flex items-center gap-1.5 bg-warm-100 text-warm-700 px-4 py-2 rounded-full text-sm font-bold cursor-default">🌱 Growth</span>
+          <span class="wiggle inline-flex items-center gap-1.5 bg-heart-500/10 text-heart-600 px-4 py-2 rounded-full text-sm font-bold cursor-default">❤️ Love</span>
+          <span class="wiggle inline-flex items-center gap-1.5 bg-purple-100 text-purple-700 px-4 py-2 rounded-full text-sm font-bold cursor-default">💡 Youth-Led</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- IMPACT BAR -->
+<section class="relative py-20 overflow-hidden">
+  <div class="absolute inset-0 bg-gradient-to-r from-leaf-700 via-leaf-600 to-leaf-500"></div>
+  <div class="absolute inset-0 opacity-10"><div class="absolute inset-0" style="background-image:url('https://z-cdn-media.chatglm.cn/files/67003287-251b-4aa0-ae60-d50c6d75edf8.jpg?auth_key=1881761223-3eb3da5f307a4922bb00bbfea9ba7c78-0-0638d1d14e11264b54808f421fe4806b');background-size:300px;background-repeat:repeat"></div></div>
+  <div class="relative z-10 max-w-5xl mx-auto px-6 text-center text-white">
+    <div class="reveal">
+      <p class="text-leaf-200 font-semibold text-sm tracking-widest uppercase mb-3">Our Impact So Far</p>
+      <h2 class="font-heading text-3xl md:text-4xl mb-12">Every Act of Kindness Counts</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div><p class="font-heading text-4xl md:text-5xl mb-1" id="impactMeals">1,200+</p><p class="text-leaf-200 text-sm font-semibold">Meals Served</p></div>
+        <div><p class="font-heading text-4xl md:text-5xl mb-1" id="impactClothes">800+</p><p class="text-leaf-200 text-sm font-semibold">Clothing Items</p></div>
+        <div><p class="font-heading text-4xl md:text-5xl mb-1" id="impactKits">350+</p><p class="text-leaf-200 text-sm font-semibold">School Kits</p></div>
+        <div><p class="font-heading text-4xl md:text-5xl mb-1" id="impactSmiles">500+</p><p class="text-leaf-200 text-sm font-semibold">Smiles Created 😊</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CAMPAIGNS -->
+<section id="campaigns" class="relative py-24 md:py-32 bg-gradient-to-b from-white to-leaf-50/50">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center mb-16 reveal">
+      <span class="inline-block bg-warm-100 text-warm-700 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase mb-4">Making a Difference</span>
+      <h2 class="font-heading text-3xl md:text-5xl text-leaf-900 mb-4">Outreach Campaigns</h2>
+      <div class="w-20 h-1.5 bg-gradient-to-r from-warm-400 to-warm-600 mx-auto rounded-full mb-4"></div>
+      <p class="text-gray-600 max-w-xl mx-auto">Each campaign is a step toward brighter futures. Click any campaign to view its full gallery.</p>
+    </div>
+
+    <!-- Admin Controls (Hidden by default) -->
+    <div id="adminControls" class="hidden flex flex-wrap items-center justify-between gap-4 mb-8 reveal">
+      <div class="flex flex-wrap gap-2">
+        <button class="campaign-tab active bg-leaf-600 text-white px-5 py-2.5 rounded-full text-sm font-bold transition-all" data-filter="all">All Campaigns</button>
+        <button class="campaign-tab bg-white text-gray-600 px-5 py-2.5 rounded-full text-sm font-bold transition-all border border-gray-200 hover:border-leaf-300" data-filter="active">Active</button>
+        <button class="campaign-tab bg-white text-gray-600 px-5 py-2.5 rounded-full text-sm font-bold transition-all border border-gray-200 hover:border-leaf-300" data-filter="upcoming">Upcoming</button>
+        <button class="campaign-tab bg-white text-gray-600 px-5 py-2.5 rounded-full text-sm font-bold transition-all border border-gray-200 hover:border-leaf-300" data-filter="completed">Completed</button>
+        <button onclick="adminLogout()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-full text-sm font-bold transition-all">🚪 Logout</button>
+      </div>
+      <button onclick="openAddCampaignModal()" class="bg-gradient-to-r from-leaf-500 to-leaf-600 hover:from-leaf-600 hover:to-leaf-700 text-white px-6 py-3 rounded-full font-bold text-sm transition-all hover:scale-105 hover:shadow-lg hover:shadow-leaf-200 flex items-center gap-2">
+        <i data-lucide="plus" class="w-5 h-5"></i> Add Campaign
+      </button>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8" id="campaignGrid"></div>
+    <div id="emptyState" class="hidden text-center py-20">
+      <div class="text-6xl mb-4">🌱</div>
+      <h3 class="font-heading text-2xl text-gray-400 mb-2">No campaigns yet</h3>
+      <p class="text-gray-400 mb-6">Start growing your impact by adding your first campaign!</p>
+      <button onclick="openAddCampaignModal()" class="bg-leaf-600 hover:bg-leaf-700 text-white px-6 py-3 rounded-full font-bold transition-all hover:scale-105">+ Add First Campaign</button>
+    </div>
+  </div>
+</section>
+
+<!-- CAMPAIGN MODAL -->
+<div id="campaignModal" class="modal-overlay fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 pt-20 md:pt-10 overflow-y-auto">
+  <div class="modal-content bg-white rounded-3xl w-full max-w-3xl shadow-2xl mb-10">
+    <div class="flex items-center justify-between p-6 border-b border-gray-100">
+      <h3 id="modalTitle" class="font-heading text-2xl text-leaf-900">Edit Campaign</h3>
+      <button onclick="closeCampaignModal()" class="p-2 hover:bg-gray-100 rounded-xl transition-colors"><i data-lucide="x" class="w-5 h-5 text-gray-500"></i></button>
+    </div>
+    <div class="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+      <input type="hidden" id="editCampaignId" value="">
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-2">Main Campaign Image *</label>
+        <div id="mainImageZone" class="upload-zone rounded-2xl h-56 flex flex-col items-center justify-center relative overflow-hidden bg-gray-50" onclick="document.getElementById('mainImageInput').click()">
+          <div id="mainImagePlaceholder" class="text-center">
+            <i data-lucide="image-plus" class="w-10 h-10 text-leaf-400 mx-auto mb-2"></i>
+            <p class="text-sm font-semibold text-gray-500">Click to upload main image</p>
+            <p class="text-xs text-gray-400 mt-1">JPG, PNG up to 5MB</p>
+          </div>
+          <img id="mainImagePreview" class="absolute inset-0 w-full h-full object-cover hidden" alt="">
+          <button id="removeMainImage" onclick="event.stopPropagation();removeMainImage()" class="absolute top-3 right-3 w-8 h-8 bg-black/60 text-white rounded-full flex items-center justify-center text-sm hover:bg-black/80 transition-colors hidden">✕</button>
+        </div>
+        <input type="file" id="mainImageInput" accept="image/*" class="hidden" onchange="handleMainImage(event)">
+      </div>
+      <div class="grid sm:grid-cols-2 gap-5">
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1.5">Campaign Name *</label>
+          <input type="text" id="campName" placeholder="e.g. Back to School Drive" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-leaf-500 focus:ring-4 focus:ring-leaf-100 outline-none transition-all">
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1.5">Status *</label>
+          <select id="campStatus" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-leaf-500 focus:ring-4 focus:ring-leaf-100 outline-none transition-all bg-white">
+            <option value="active">🟢 Active</option>
+            <option value="upcoming">🕐 Upcoming</option>
+            <option value="completed">✅ Completed</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-1.5">Description *</label>
+        <textarea id="campDesc" rows="3" placeholder="Describe what this campaign is about..." class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-leaf-500 focus:ring-4 focus:ring-leaf-100 outline-none transition-all resize-none"></textarea>
+      </div>
+      <div class="grid sm:grid-cols-3 gap-5">
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1.5">Progress (%)</label>
+          <input type="number" id="campProgress" min="0" max="100" value="0" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-leaf-500 focus:ring-4 focus:ring-leaf-100 outline-none transition-all">
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1.5">Location</label>
+          <input type="text" id="campLocation" placeholder="e.g. 3 Communities" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-leaf-500 focus:ring-4 focus:ring-leaf-100 outline-none transition-all">
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1.5">Date</label>
+          <input type="text" id="campDate" placeholder="e.g. June 2025" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-leaf-500 focus:ring-4 focus:ring-leaf-100 outline-none transition-all">
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-1.5">Tagline (shown under progress)</label>
+        <input type="text" id="campTagline" placeholder="e.g. 150 Children Served ♥" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-leaf-500 focus:ring-4 focus:ring-leaf-100 outline-none transition-all">
+      </div>
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-2">Card Color Theme</label>
+        <div class="flex flex-wrap gap-3" id="colorPicker">
+          <button type="button" class="color-opt w-10 h-10 rounded-xl border-3 border-transparent hover:scale-110 transition-all" data-color="leaf" style="background: linear-gradient(135deg, rgb(74, 222, 128), rgb(22, 163, 74));"></button>
+          <button type="button" class="color-opt w-10 h-10 rounded-xl border-3 border-transparent hover:scale-110 transition-all" data-color="warm" style="background: linear-gradient(135deg, rgb(251, 191, 36), rgb(217, 119, 6));"></button>
+          <button type="button" class="color-opt w-10 h-10 rounded-xl border-3 border-transparent hover:scale-110 transition-all" data-color="sky" style="background: linear-gradient(135deg, rgb(56, 189, 248), rgb(14, 165, 233));"></button>
+          <button type="button" class="color-opt w-10 h-10 rounded-xl border-3 border-transparent hover:scale-110 transition-all" data-color="heart" style="background: linear-gradient(135deg, rgb(251, 113, 133), rgb(225, 29, 72));"></button>
+          <button type="button" class="color-opt w-10 h-10 rounded-xl border-3 border-transparent hover:scale-110 transition-all" data-color="purple" style="background: linear-gradient(135deg, rgb(192, 132, 252), rgb(124, 58, 237));"></button>
+          <button type="button" class="color-opt w-10 h-10 rounded-xl border-3 border-transparent hover:scale-110 transition-all" data-color="teal" style="background: linear-gradient(135deg, rgb(45, 212, 191), rgb(13, 148, 136));"></button>
+          <button type="button" class="color-opt w-10 h-10 rounded-xl border-3 border-transparent hover:scale-110 transition-all" data-color="orange" style="background: linear-gradient(135deg, rgb(251, 146, 60), rgb(234, 88, 12));"></button>
+          <button type="button" class="color-opt w-10 h-10 rounded-xl border-3 border-transparent hover:scale-110 transition-all" data-color="rose" style="background: linear-gradient(135deg, rgb(253, 164, 175), rgb(244, 63, 94));"></button>
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-2">Campaign Gallery Images</label>
+        <p class="text-xs text-gray-400 mb-3">Add multiple photos from the campaign.</p>
+        <div id="galleryZone" class="upload-zone rounded-2xl h-32 flex flex-col items-center justify-center bg-gray-50 mb-3" onclick="document.getElementById('galleryInput').click()">
+          <i data-lucide="images" class="w-8 h-8 text-leaf-400 mx-auto mb-1"></i>
+          <p class="text-sm font-semibold text-gray-500">Click to add gallery photos</p>
+          <p class="text-xs text-gray-400">Select multiple images</p>
+        </div>
+        <input type="file" id="galleryInput" accept="image/*" multiple class="hidden" onchange="handleGalleryImages(event)">
+        <div id="galleryPreviewGrid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3"></div>
+      </div>
+    </div>
+    <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-100 bg-gray-50/50 rounded-b-3xl">
+      <button onclick="closeCampaignModal()" class="px-6 py-3 rounded-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors">Cancel</button>
+      <button onclick="saveCampaign()" class="bg-gradient-to-r from-leaf-500 to-leaf-600 hover:from-leaf-600 hover:to-leaf-700 text-white px-8 py-3 rounded-xl font-bold transition-all hover:scale-105 hover:shadow-lg flex items-center gap-2">
+        <i data-lucide="check" class="w-5 h-5"></i> <span id="saveButtonText">Update Campaign</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- GALLERY MODAL -->
+<div id="galleryModal" class="gallery-modal fixed inset-0 z-[70] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="gallery-modal-content bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+    <div class="flex items-center justify-between p-5 border-b border-gray-100 flex-shrink-0">
+      <div>
+        <h3 id="galleryTitle" class="font-heading text-xl text-leaf-900">Gallery</h3>
+        <p id="galleryCount" class="text-sm text-gray-500">0 photos</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="openAddGalleryToCampaign()" id="addMorePhotosBtn" class="bg-leaf-100 hover:bg-leaf-200 text-leaf-700 px-4 py-2 rounded-xl text-sm font-bold transition-colors flex items-center gap-1.5">
+          <i data-lucide="plus" class="w-4 h-4"></i> Add Photos
+        </button>
+        <button onclick="closeGalleryModal()" class="p-2 hover:bg-gray-100 rounded-xl transition-colors"><i data-lucide="x" class="w-5 h-5 text-gray-500"></i></button>
+      </div>
+    </div>
+    <div id="galleryViewGrid" class="flex-1 overflow-y-auto p-5"></div>
+    <div id="lightbox" class="lightbox fixed inset-0 z-[80] bg-black/95 flex items-center justify-center">
+      <button onclick="closeLightbox()" class="absolute top-5 right-5 w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+      <button onclick="lightboxPrev()" class="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition-colors"><i data-lucide="chevron-left" class="w-6 h-6"></i></button>
+      <button onclick="lightboxNext()" class="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition-colors"><i data-lucide="chevron-right" class="w-6 h-6"></i></button>
+      <img id="lightboxImg" src="" alt="" class="max-w-[90vw] max-h-[85vh] object-contain rounded-lg">
+      <p id="lightboxCounter" class="absolute bottom-5 left-1/2 -translate-x-1/2 text-white/70 text-sm font-semibold"></p>
+    </div>
+  </div>
+</div>
+<input type="file" id="addMoreGalleryInput" accept="image/*" multiple class="hidden" onchange="handleAddMoreGallery(event)">
+
+<!-- DONATE -->
+<section id="donate" class="relative py-24 md:py-32 bg-white overflow-hidden">
+  <div class="absolute top-0 right-0 w-96 h-96 bg-leaf-50 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+  <div class="absolute bottom-0 left-0 w-80 h-80 bg-warm-50 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl"></div>
+  <div class="relative z-10 max-w-5xl mx-auto px-6">
+    <div class="text-center mb-16 reveal">
+      <span class="inline-block bg-heart-500/10 text-heart-600 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase mb-4">Make a Difference</span>
+      <h2 class="font-heading text-3xl md:text-5xl text-leaf-900 mb-4">Support Our Cause</h2>
+      <div class="w-20 h-1.5 bg-gradient-to-r from-heart-400 to-heart-500 mx-auto rounded-full mb-4"></div>
+      <p class="text-gray-600 max-w-xl mx-auto">Every contribution, no matter how small, directly impacts a child's life. 100% of donations go to our outreach programs.</p>
+    </div>
+    <div class="grid lg:grid-cols-2 gap-12 items-start">
+      <div class="reveal">
+        <div class="bg-white rounded-3xl border-2 border-leaf-100 p-8 shadow-lg shadow-leaf-100/30">
+          <h3 class="font-heading text-2xl text-leaf-900 mb-6 flex items-center gap-2"><span class="pulse-heart inline-block">💝</span> Choose Your Amount</h3>
+          <div class="grid grid-cols-3 gap-3 mb-6">
+            <button class="amount-btn rounded-2xl py-4 font-heading text-xl text-gray-700" data-amount="5">$5</button>
+            <button class="amount-btn rounded-2xl py-4 font-heading text-xl text-gray-700" data-amount="10">$10</button>
+            <button class="amount-btn rounded-2xl py-4 font-heading text-xl text-gray-700 selected" data-amount="25">$25</button>
+            <button class="amount-btn rounded-2xl py-4 font-heading text-xl text-gray-700" data-amount="50">$50</button>
+            <button class="amount-btn rounded-2xl py-4 font-heading text-xl text-gray-700" data-amount="100">$100</button>
+            <button class="amount-btn rounded-2xl py-4 font-heading text-xl text-gray-700" data-amount="custom">Other</button>
+          </div>
+          <div id="customAmountWrap" class="mb-6 hidden">
+            <label class="block text-sm font-bold text-gray-600 mb-2">Enter Amount ($)</label>
+            <input type="number" id="customAmount" min="1" placeholder="Enter amount" class="w-full px-4 py-3 rounded-xl border-2 border-leaf-200 focus:border-leaf-500 focus:ring-4 focus:ring-leaf-100 outline-none transition-all text-lg font-semibold">
+          </div>
+          <div id="donationImpact" class="bg-leaf-50 rounded-2xl p-4 mb-6 border border-leaf-100">
+            <p class="text-sm font-bold text-leaf-800 mb-1">Your $25 can:</p>
+            <p class="text-sm text-leaf-600">Provide a school kit for <strong>1 child</strong> 🎒</p>
+          </div>
+          <div class="space-y-4 mb-6">
+            <div><label class="block text-sm font-bold text-gray-600 mb-1.5">Full Name</label><input type="text" id="donorName" placeholder="Your name" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-leaf-500 focus:ring-4 focus:ring-leaf-100 outline-none transition-all"></div>
+            <div><label class="block text-sm font-bold text-gray-600 mb-1.5">Email Address</label><input type="email" id="donorEmail" placeholder="your@email.com" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-leaf-500 focus:ring-4 focus:ring-leaf-100 outline-none transition-all"></div>
+          </div>
+          <button id="donateBtn" onclick="handleDonate()" class="w-full bg-gradient-to-r from-leaf-500 to-leaf-600 hover:from-leaf-600 hover:to-leaf-700 text-white py-4 rounded-2xl font-bold text-lg transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-leaf-200 flex items-center justify-center gap-2"><i data-lucide="heart" class="w-5 h-5"></i> Donate Now</button>
+          <p class="text-center text-xs text-gray-400 mt-3">🔒 Secure & transparent. You'll receive an impact report.</p>
+        </div>
+      </div>
+      <div class="reveal space-y-6" style="transition-delay:.2s">
+        <div class="bg-gradient-to-br from-leaf-50 to-leaf-100 rounded-3xl p-6 border border-leaf-200 card-lift">
+          <h4 class="font-heading text-lg text-leaf-800 mb-4">💡 What Your Giving Does</h4>
+          <div class="space-y-4">
+            <div class="flex items-start gap-3"><span class="flex-shrink-0 w-10 h-10 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm">🍞</span><div><p class="font-bold text-sm text-leaf-800">$5 — Feeds a child for a day</p><p class="text-xs text-gray-500">Warm meal + clean water</p></div></div>
+            <div class="flex items-start gap-3"><span class="flex-shrink-0 w-10 h-10 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm">👕</span><div><p class="font-bold text-sm text-leaf-800">$15 — Clothing bundle</p><p class="text-xs text-gray-500">2 sets of clothes + underwear</p></div></div>
+            <div class="flex items-start gap-3"><span class="flex-shrink-0 w-10 h-10 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm">🎒</span><div><p class="font-bold text-sm text-leaf-800">$25 — Complete school kit</p><p class="text-xs text-gray-500">Bag, books, stationery, uniform</p></div></div>
+            <div class="flex items-start gap-3"><span class="flex-shrink-0 w-10 h-10 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm">🏠</span><div><p class="font-bold text-sm text-leaf-800">$100 — Sponsors a family</p><p class="text-xs text-gray-500">Monthly food + hygiene + school supplies</p></div></div>
+          </div>
+        </div>
+        <div class="bg-gradient-to-br from-warm-50 to-warm-100 rounded-3xl p-6 border border-warm-200 card-lift">
+          <h4 class="font-heading text-lg text-warm-800 mb-3">📊 100% Transparency</h4>
+          <div class="space-y-3">
+            <div><div class="flex justify-between text-sm mb-1"><span class="font-semibold text-gray-700">Direct Aid</span><span class="font-bold text-leaf-600">90%</span></div><div class="w-full h-2 bg-white rounded-full overflow-hidden"><div class="progress-fill h-full bg-leaf-500 rounded-full" style="width:90%"></div></div></div>
+            <div><div class="flex justify-between text-sm mb-1"><span class="font-semibold text-gray-700">Operations</span><span class="font-bold text-warm-600">8%</span></div><div class="w-full h-2 bg-white rounded-full overflow-hidden"><div class="progress-fill h-full bg-warm-400 rounded-full" style="width:8%"></div></div></div>
+            <div><div class="flex justify-between text-sm mb-1"><span class="font-semibold text-gray-700">Admin</span><span class="font-bold text-sky-600">2%</span></div><div class="w-full h-2 bg-white rounded-full overflow-hidden"><div class="progress-fill h-full bg-sky-400 rounded-full" style="width:2%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SUGGESTIONS -->
+<section id="suggestions" class="relative py-24 md:py-32 bg-gradient-to-b from-leaf-50/50 to-white">
+  <div class="max-w-4xl mx-auto px-6">
+    <div class="text-center mb-16 reveal">
+      <span class="inline-block bg-sky-100 text-sky-700 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase mb-4">We Value Your Voice</span>
+      <h2 class="font-heading text-3xl md:text-5xl text-leaf-900 mb-4">Share Your Suggestions</h2>
+      <div class="w-20 h-1.5 bg-gradient-to-r from-sky-400 to-sky-600 mx-auto rounded-full mb-4"></div>
+    </div>
+    <div class="reveal">
+      <div class="bg-white rounded-3xl border-2 border-sky-100 p-8 md:p-10 shadow-lg shadow-sky-100/20">
+        <div class="mb-6">
+          <label class="block text-sm font-bold text-gray-700 mb-3">What type of suggestion?</label>
+          <div class="flex flex-wrap gap-2">
+            <button class="suggestion-type-btn active bg-sky-500 text-white px-4 py-2 rounded-full text-sm font-semibold transition-all" data-type="idea">💡 Idea</button>
+            <button class="suggestion-type-btn bg-gray-100 text-gray-600 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-sky-50" data-type="feedback">💬 Feedback</button>
+            <button class="suggestion-type-btn bg-gray-100 text-gray-600 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-sky-50" data-type="campaign">🎯 Campaign Idea</button>
+            <button class="suggestion-type-btn bg-gray-100 text-gray-600 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-sky-50" data-type="partnership">🤝 Partnership</button>
+            <button class="suggestion-type-btn bg-gray-100 text-gray-600 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-sky-50" data-type="other">✨ Other</button>
+          </div>
+        </div>
+        <div class="space-y-5">
+          <div><label class="block text-sm font-bold text-gray-700 mb-1.5">Your Name *</label><input type="text" id="sugName" placeholder="How should we call you?" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-sky-400 focus:ring-4 focus:ring-sky-100 outline-none transition-all"></div>
+          <div><label class="block text-sm font-bold text-gray-700 mb-1.5">Your Suggestion *</label><textarea id="sugMessage" rows="4" placeholder="Tell us what's on your mind..." class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-sky-400 focus:ring-4 focus:ring-sky-100 outline-none transition-all resize-none"></textarea></div>
+          <button onclick="handleSuggestion()" class="w-full bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white py-4 rounded-2xl font-bold text-lg transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-sky-200 flex items-center justify-center gap-2"><i data-lucide="send" class="w-5 h-5"></i> Submit Suggestion</button>
+        </div>
+      </div>
+      <div class="mt-10 reveal" style="transition-delay:.2s">
+        <h4 class="font-heading text-lg text-leaf-800 mb-4 flex items-center gap-2"><span class="text-xl">🌱</span> Recent Suggestions</h4>
+        <div class="space-y-3" id="suggestionsList">
+          <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div class="flex items-start gap-3"><div class="w-8 h-8 bg-leaf-100 rounded-full flex items-center justify-center text-sm flex-shrink-0">💡</div><div class="flex-1"><div class="flex items-center gap-2 mb-1"><p class="font-bold text-sm text-gray-800">Sarah M.</p><span class="bg-leaf-100 text-leaf-700 px-2 py-0.5 rounded-full text-[10px] font-bold">Idea</span></div><p class="text-sm text-gray-600">"It would be great to have a mentorship program where older youth can guide younger children!"</p><p class="text-xs text-gray-400 mt-2">2 days ago</p></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact" class="relative py-24 md:py-32 bg-white overflow-hidden">
+  <div class="absolute bottom-0 right-0 w-[500px] h-[500px] bg-leaf-50 rounded-full translate-y-1/2 translate-x-1/3 blur-3xl"></div>
+  <div class="relative z-10 max-w-7xl mx-auto px-6">
+    <div class="text-center mb-16 reveal">
+      <span class="inline-block bg-leaf-100 text-leaf-700 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase mb-4">Get In Touch</span>
+      <h2 class="font-heading text-3xl md:text-5xl text-leaf-900 mb-4">Contact Us</h2>
+      <div class="w-20 h-1.5 bg-gradient-to-r from-leaf-400 to-leaf-600 mx-auto rounded-full mb-4"></div>
+    </div>
+    <div class="grid lg:grid-cols-5 gap-12">
+      <div class="lg:col-span-2 reveal space-y-6">
+        <div class="bg-leaf-50 rounded-3xl p-6 border border-leaf-100 card-lift"><div class="flex items-start gap-4"><div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm flex-shrink-0"><i data-lucide="map-pin" class="w-5 h-5 text-leaf-600"></i></div><div><h4 class="font-bold text-leaf-800 mb-1">Location</h4><p class="text-sm text-gray-600">Growing Minds Youth Initiative<br>Community Center, Main Street</p></div></div></div>
+        <div class="bg-warm-50 rounded-3xl p-6 border border-warm-100 card-lift"><div class="flex items-start gap-4"><div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm flex-shrink-0"><i data-lucide="phone" class="w-5 h-5 text-warm-600"></i></div><div><h4 class="font-bold text-warm-800 mb-1">Phone</h4><p class="text-sm text-gray-600">+1 (234) 567-8900</p><p class="text-xs text-gray-400 mt-1">Mon-Sat, 9am - 5pm</p></div></div></div>
+        <div class="bg-sky-50 rounded-3xl p-6 border border-sky-100 card-lift"><div class="flex items-start gap-4"><div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm flex-shrink-0"><i data-lucide="mail" class="w-5 h-5 text-sky-600"></i></div><div><h4 class="font-bold text-sky-800 mb-1">Email</h4><p class="text-sm text-gray-600">info@growingmindsyi.org</p></div></div></div>
+      </div>
+      <div class="lg:col-span-3 reveal" style="transition-delay:.2s">
+        <div class="bg-white rounded-3xl border-2 border-leaf-100 p-8 shadow-lg shadow-leaf-100/20">
+          <h3 class="font-heading text-2xl text-leaf-900 mb-6">✉️ Send Us a Message</h3>
+          <div class="grid sm:grid-cols-2 gap-5 mb-5">
+            <div><label class="block text-sm font-bold text-gray-700 mb-1.5">First Name *</label><input type="text" id="contactFirst" placeholder="John" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-leaf-500 focus:ring-4 focus:ring-leaf-100 outline-none transition-all"></div>
+            <div><label class="block text-sm font-bold text-gray-700 mb-1.5">Last Name *</label><input type="text" id="contactLast" placeholder="Doe" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-leaf-500 focus:ring-4 focus:ring-leaf-100 outline-none transition-all"></div>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-5 mb-5">
+            <div><label class="block text-sm font-bold text-gray-700 mb-1.5">Email *</label><input type="email" id="contactEmail" placeholder="john@example.com" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-leaf-500 focus:ring-4 focus:ring-leaf-100 outline-none transition-all"></div>
+            <div><label class="block text-sm font-bold text-gray-700 mb-1.5">Subject *</label><select id="contactSubject" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-leaf-500 focus:ring-4 focus:ring-leaf-100 outline-none transition-all bg-white"><option value="">Select a topic...</option><option value="volunteer">I want to volunteer</option><option value="donate">Donation inquiry</option><option value="partner">Partnership</option><option value="general">General inquiry</option></select></div>
+          </div>
+          <div class="mb-6"><label class="block text-sm font-bold text-gray-700 mb-1.5">Message *</label><textarea id="contactMessage" rows="5" placeholder="Tell us how we can help..." class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-leaf-500 focus:ring-4 focus:ring-leaf-100 outline-none transition-all resize-none"></textarea></div>
+          <button onclick="handleContact()" class="w-full bg-gradient-to-r from-leaf-500 to-leaf-600 hover:from-leaf-600 hover:to-leaf-700 text-white py-4 rounded-2xl font-bold text-lg transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-leaf-200 flex items-center justify-center gap-2"><i data-lucide="send" class="w-5 h-5"></i> Send Message</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="relative bg-gradient-to-b from-leaf-900 to-leaf-950 text-white overflow-hidden">
+  <div class="absolute inset-0 opacity-[0.03]" style="background-image:url('https://z-cdn-media.chatglm.cn/files/67003287-251b-4aa0-ae60-d50c6d75edf8.jpg?auth_key=1881761223-3eb3da5f307a4922bb00bbfea9ba7c78-0-0638d1d14e11264b54808f421fe4806b');background-size:200px;background-repeat:repeat"></div>
+  <div class="relative z-10 max-w-7xl mx-auto px-6 py-16">
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+      <div>
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-leaf-400"><img src="https://z-cdn-media.chatglm.cn/files/67003287-251b-4aa0-ae60-d50c6d75edf8.jpg?auth_key=1881761223-3eb3da5f307a4922bb00bbfea9ba7c78-0-0638d1d14e11264b54808f421fe4806b" alt="GMYI" class="w-full h-full object-cover"></div>
+          <div><p class="font-heading text-leaf-200 text-sm leading-tight">Growing Minds</p><p class="text-[10px] text-leaf-400 font-semibold tracking-wider uppercase">Youth Initiative</p></div>
+        </div>
+        <p class="text-leaf-300/70 text-sm leading-relaxed">Nurturing hope, empowering lives. Every child deserves a chance to grow.</p>
+      </div>
+      <div><h4 class="font-heading text-leaf-200 mb-4">Quick Links</h4><ul class="space-y-2"><li><a href="#about" class="text-leaf-300/70 hover:text-white text-sm transition-colors">About Us</a></li><li><a href="#campaigns" class="text-leaf-300/70 hover:text-white text-sm transition-colors">Campaigns</a></li><li><a href="#donate" class="text-leaf-300/70 hover:text-white text-sm transition-colors">Donate</a></li><li><a href="#suggestions" class="text-leaf-300/70 hover:text-white text-sm transition-colors">Suggestions</a></li><li><a href="#contact" class="text-leaf-300/70 hover:text-white text-sm transition-colors">Contact</a></li></ul></div>
+      <div><h4 class="font-heading text-leaf-200 mb-4">Get Involved</h4><ul class="space-y-2"><li><a href="#donate" class="text-leaf-300/70 hover:text-white text-sm transition-colors">Make a Donation</a></li><li><a href="#contact" class="text-leaf-300/70 hover:text-white text-sm transition-colors">Volunteer</a></li><li><a href="#contact" class="text-leaf-300/70 hover:text-white text-sm transition-colors">Corporate Partnerships</a></li></ul></div>
+      <div><h4 class="font-heading text-leaf-200 mb-4">Stay Updated</h4><p class="text-leaf-300/70 text-sm mb-3">Get our latest news and impact stories.</p><div class="flex gap-2"><input type="email" id="newsletterEmail" placeholder="Your email" class="flex-1 px-3 py-2.5 rounded-xl bg-leaf-800/50 border border-leaf-700 text-white text-sm placeholder-leaf-500 focus:border-leaf-400 outline-none transition-all"><button onclick="handleNewsletter()" class="bg-leaf-500 hover:bg-leaf-400 px-4 py-2.5 rounded-xl transition-colors"><i data-lucide="arrow-right" class="w-4 h-4"></i></button></div></div>
+    </div>
+    <div class="border-t border-leaf-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+      <p class="text-leaf-400 text-sm">© 2025 Growing Minds Youth Initiative. All rights reserved.</p>
+      <p class="text-leaf-500 text-xs">Made with 💚 for a better tomorrow</p>
+    </div>
+  </div>
+</footer>
+
+<!-- Back to Top -->
+<button id="backToTop" onclick="window.scrollTo({top:0})" class="fixed bottom-8 right-8 z-50 w-12 h-12 bg-leaf-600 hover:bg-leaf-700 text-white rounded-full shadow-lg shadow-leaf-200 flex items-center justify-center transition-all hover:scale-110 opacity-0 translate-y-4 pointer-events-none" style="transition: 0.4s; opacity: 0; transform: translateY(16px); pointer-events: none;"><i data-lucide="arrow-up" class="w-5 h-5"></i></button>
+
+<script>
+lucide.createIcons();
+
+// ==========================================================
+// ⬇️⬇️⬇️ PASTE YOUR FIREBASE CONFIG HERE ⬇️⬇️⬇️
+// ==========================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyC7MgP8So1m0jkB1UI_mMwbKoCvrhynCho",
+  authDomain: "growing-minds-youth-intiative.firebaseapp.com",
+  projectId: "growing-minds-youth-intiative",
+  storageBucket: "growing-minds-youth-intiative.firebasestorage.app",
+  messagingSenderId: "150178826633",
+  appId: "1:150178826633:web:72a24edac2c27d9db1b958"
+};
+// ==========================================================
+// ⬆️⬆️⬆️ PASTE YOUR FIREBASE CONFIG HERE ⬆️⬆️⬆️
+// ==========================================================
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
+const auth = firebase.auth();
+
+// Admin Auth
+let currentAdmin = null;
+auth.onAuthStateChanged(user => {
+  if (user) {
+    currentAdmin = user;
+    toggleAdminMode(true);
+    showToast(`Welcome back, ${user.email}! 🎉`, 'success');
+  } else {
+    currentAdmin = null;
+    toggleAdminMode(false);
+  }
+});
+
+function promptAdminLogin() {
+  const email = prompt("Enter Admin Email:");
+  if (!email) return;
+  const password = prompt("Enter Admin Password:");
+  if (!password) return;
+  auth.signInWithEmailAndPassword(email, password)
+    .then(() => { /* handled by onAuthStateChanged */ })
+    .catch(err => alert("Login failed: " + err.message));
+}
+
+function adminLogout() {
+  auth.signOut().then(() => showToast("Logged out.", "info"));
+}
+
+function toggleAdminMode(isActive) {
+  const adminControls = document.getElementById('adminControls');
+  const adminButtons = document.querySelectorAll('.admin-only');
+  if (isActive) {
+    adminControls.classList.remove('hidden');
+    adminButtons.forEach(el => el.classList.remove('hidden'));
+  } else {
+    adminControls.classList.add('hidden');
+    adminButtons.forEach(el => el.classList.add('hidden'));
+  }
+}
+
+// Campaign Data & Render
+let campaigns = [];
+const colorGradients = {
+  leaf: ['#4ade80','#16a34a'], warm: ['#fbbf24','#d97706'], sky: ['#38bdf8','#0ea5e9'],
+  heart: ['#fb7185','#e11d48'], purple: ['#c084fc','#7c3aed'], teal: ['#2dd4bf','#0d9488'],
+  orange: ['#fb923c','#ea580c'], rose: ['#fda4af','#f43f5e']
+};
+const statusConfig = {
+  active: { label: 'Active', icon: '<span class="w-2 h-2 bg-leaf-500 rounded-full animate-pulse"></span>', badge: 'bg-white/90 text-leaf-700' },
+  upcoming: { label: 'Upcoming', icon: '<i data-lucide="clock" class="w-3 h-3"></i>', badge: 'bg-white/90 text-sky-700' },
+  completed: { label: 'Completed', icon: '✅', badge: 'bg-white/90 text-heart-600' }
+};
+
+function loadCampaignsFromFirestore() {
+  db.collection("campaigns").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
+    campaigns = [];
+    snapshot.forEach(doc => { campaigns.push({ id: doc.id, ...doc.data() }); });
+    const activeFilter = document.querySelector('.campaign-tab.active')?.dataset.filter || 'all';
+    renderCampaigns(activeFilter);
+  });
+}
+
+function renderCampaigns(filter = 'all') {
+  const grid = document.getElementById('campaignGrid');
+  const empty = document.getElementById('emptyState');
+  const filtered = filter === 'all' ? campaigns : campaigns.filter(c => c.status === filter);
+  if (filtered.length === 0) { grid.innerHTML = ''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+
+  grid.innerHTML = filtered.map((c, i) => {
+    const [c1, c2] = colorGradients[c.color] || colorGradients.leaf;
+    const st = statusConfig[c.status];
+    const hasImages = c.mainImage || (c.gallery && c.gallery.length > 0);
+    const totalImages = (c.mainImage ? 1 : 0) + (c.gallery ? c.gallery.length : 0);
+    return `
+    <div class="campaign-card reveal card-lift bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm" data-status="${c.status}" style="transition-delay:${i*0.1}s">
+      <div class="relative h-52 bg-gradient-to-br from-[${c1}] to-[${c2}] flex items-center justify-center overflow-hidden cursor-pointer group" onclick="openGalleryView('${c.id}')">
+        ${hasImages ?
+          `<img src="${c.mainImage || c.gallery[0]}" alt="${c.name}" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+           <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+           ${totalImages > 1 ? `<span class="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">📷 ${totalImages} photos</span>` : ''}
+           <span class="absolute bottom-4 left-4 ${st.badge} px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5">${st.icon} ${st.label}</span>
+           <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
+             <span class="bg-white/90 text-gray-800 px-4 py-2 rounded-full text-sm font-bold shadow-lg">🔍 View Gallery</span>
+           </div>`
+        : `<div class="flex flex-col items-center justify-center w-full h-full bg-white/20 text-white font-heading">No Image</div><span class="absolute top-4 left-4 ${st.badge} px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5">${st.icon} ${st.label}</span>` }
+      </div>
+      <div class="p-6">
+        <div class="flex items-start justify-between gap-2 mb-2">
+          <h3 class="font-heading text-xl text-leaf-900 leading-tight">${c.name}</h3>
+          <div class="flex items-center gap-1 flex-shrink-0 admin-only hidden">
+            <button onclick="event.stopPropagation();openEditCampaignModal('${c.id}')" class="p-1.5 hover:bg-leaf-50 rounded-lg transition-colors" title="Edit"><i data-lucide="pencil" class="w-4 h-4 text-gray-400 hover:text-leaf-600"></i></button>
+            <button onclick="event.stopPropagation();confirmDeleteCampaign('${c.id}')" class="p-1.5 hover:bg-heart-500/10 rounded-lg transition-colors" title="Delete"><i data-lucide="trash-2" class="w-4 h-4 text-gray-400 hover:text-heart-500"></i></button>
+          </div>
+        </div>
+        <p class="text-gray-600 text-sm mb-4 leading-relaxed line-clamp-2">${c.desc}</p>
+        <div class="mb-4">
+          <div class="flex justify-between text-sm mb-1.5"><span class="font-bold text-gray-700">Progress</span><span class="font-bold text-gray-500">${c.progress}%</span></div>
+          <div class="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-[${c1}] to-[${c2}] rounded-full" style="width:${c.progress}%"></div></div>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-gray-500 font-semibold">📍 ${c.location || 'TBA'} ${c.date ? '· ' + c.date : ''}</span>
+          ${c.tagline ? `<span class="text-xs font-bold text-[${c1}]">${c.tagline}</span>` : ''}
+        </div>
+        ${totalImages > 0 ? `<button onclick="openGalleryView('${c.id}')" class="mt-3 w-full text-center text-sm font-bold text-leaf-600 hover:text-leaf-800 py-2 rounded-xl hover:bg-leaf-50 transition-colors flex items-center justify-center gap-1.5"><i data-lucide="images" class="w-4 h-4"></i> View Gallery (${totalImages})</button>` : ''}
+      </div>
+      <div id="delConfirm_${c.id}" class="delete-confirm absolute inset-0 bg-white/95 backdrop-blur-sm rounded-3xl flex flex-col items-center justify-center p-6 z-10">
+        <div class="text-4xl mb-3">🗑️</div>
+        <h4 class="font-heading text-lg text-gray-800 mb-2">Delete "${c.name}"?</h4>
+        <p class="text-sm text-gray-500 text-center mb-5">This action cannot be undone.</p>
+        <div class="flex gap-3">
+          <button onclick="cancelDelete('${c.id}')" class="px-5 py-2.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">Cancel</button>
+          <button onclick="deleteCampaign('${c.id}')" class="px-5 py-2.5 rounded-xl font-bold text-white bg-heart-500 hover:bg-heart-600 transition-colors">Delete</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  lucide.createIcons();
+  document.querySelectorAll('.campaign-card.reveal').forEach(el => revealObserver.observe(el));
+}
+
+// Modal Functions
+function openAddCampaignModal() {
+  document.getElementById('modalTitle').textContent = 'Add New Campaign';
+  document.getElementById('saveButtonText').textContent = 'Save Campaign';
+  document.getElementById('editCampaignId').value = '';
+  clearCampaignForm();
+  document.getElementById('campaignModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function openEditCampaignModal(id) {
+  const c = campaigns.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('modalTitle').textContent = 'Edit Campaign';
+  document.getElementById('saveButtonText').textContent = 'Update Campaign';
+  document.getElementById('editCampaignId').value = id;
+  document.getElementById('campName').value = c.name;
+  document.getElementById('campStatus').value = c.status;
+  document.getElementById('campDesc').value = c.desc;
+  document.getElementById('campProgress').value = c.progress;
+  document.getElementById('campLocation').value = c.location || '';
+  document.getElementById('campDate').value = c.date || '';
+  document.getElementById('campTagline').value = c.tagline || '';
+  document.querySelectorAll('.color-opt').forEach(b => { b.classList.remove('selected'); b.style.borderColor = 'transparent'; });
+  const colorBtn = document.querySelector(`.color-opt[data-color="${c.color}"]`);
+  if (colorBtn) { colorBtn.classList.add('selected'); colorBtn.style.borderColor = '#166534'; }
+  tempMainImage = c.mainImage || '';
+  if (tempMainImage) {
+    document.getElementById('mainImagePreview').src = tempMainImage;
+    document.getElementById('mainImagePreview').classList.remove('hidden');
+    document.getElementById('mainImagePlaceholder').classList.add('hidden');
+    document.getElementById('removeMainImage').classList.remove('hidden');
+  } else { removeMainImage(); }
+  tempGallery = [...(c.gallery || [])];
+  renderGalleryPreviewGrid();
+  document.getElementById('campaignModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCampaignModal() { document.getElementById('campaignModal').classList.remove('open'); document.body.style.overflow = ''; }
+
+function clearCampaignForm() {
+  document.getElementById('campName').value = '';
+  document.getElementById('campStatus').value = 'active';
+  document.getElementById('campDesc').value = '';
+  document.getElementById('campProgress').value = 0;
+  document.getElementById('campLocation').value = '';
+  document.getElementById('campDate').value = '';
+  document.getElementById('campTagline').value = '';
+  tempMainImage = ''; tempGallery = [];
+  removeMainImage(); renderGalleryPreviewGrid();
+  document.querySelectorAll('.color-opt').forEach(b => { b.classList.remove('selected'); b.style.borderColor = 'transparent'; });
+  const first = document.querySelector('.color-opt[data-color="leaf"]');
+  if (first) { first.classList.add('selected'); first.style.borderColor = '#166534'; }
+}
+
+// Image Uploads to Firebase Storage
+function uploadToFirebase(file, folder) {
+  const ref = storage.ref(`${folder}/${Date.now()}_${file.name}`);
+  return ref.put(file).then(() => ref.getDownloadURL());
+}
+
+function handleMainImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { showToast('Image too large. Max 5MB.', 'warning'); return; }
+  document.getElementById('mainImagePlaceholder').innerHTML = '<p class="text-sm font-semibold text-leaf-600">Uploading to cloud...</p>';
+  uploadToFirebase(file, 'campaigns/main')
+    .then(url => {
+      tempMainImage = url;
+      document.getElementById('mainImagePreview').src = url;
+      document.getElementById('mainImagePreview').classList.remove('hidden');
+      document.getElementById('mainImagePlaceholder').classList.add('hidden');
+      document.getElementById('removeMainImage').classList.remove('hidden');
+    })
+    .catch(err => { showToast("Upload failed!", "error"); console.error(err); });
+}
+
+function removeMainImage() { tempMainImage = ''; document.getElementById('mainImagePreview').classList.add('hidden'); document.getElementById('mainImagePreview').src = ''; document.getElementById('mainImagePlaceholder').innerHTML = '<i data-lucide="image-plus" class="w-10 h-10 text-leaf-400 mx-auto mb-2"></i><p class="text-sm font-semibold text-gray-500">Click to upload main image</p><p class="text-xs text-gray-400 mt-1">JPG, PNG up to 5MB</p>'; document.getElementById('removeMainImage').classList.add('hidden'); document.getElementById('mainImageInput').value = ''; lucide.createIcons(); }
+
+function handleGalleryImages(e) {
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+  showToast(`Uploading ${files.length} photo(s)...`, 'info');
+  let uploaded = 0;
+  files.forEach(file => {
+    uploadToFirebase(file, 'campaigns/gallery')
+      .then(url => {
+        tempGallery.push(url);
+        uploaded++;
+        if (uploaded === files.length) { renderGalleryPreviewGrid(); showToast(`${files.length} photo(s) uploaded! 📷`, 'success'); }
+      })
+      .catch(err => console.error(err));
+  });
+  e.target.value = '';
+}
+
+function removeGalleryImage(index) { tempGallery.splice(index, 1); renderGalleryPreviewGrid(); }
+
+function renderGalleryPreviewGrid() {
+  const grid = document.getElementById('galleryPreviewGrid');
+  if (!tempGallery.length) { grid.innerHTML = ''; return; }
+  grid.innerHTML = tempGallery.map((src, i) => `
+    <div class="relative group img-group rounded-xl overflow-hidden aspect-square">
+      <img src="${src}" class="w-full h-full object-cover gallery-thumb" alt="Gallery ${i+1}">
+      <div class="img-overlay absolute inset-0 bg-black/50 flex items-center justify-center">
+        <button onclick="removeGalleryImage(${i})" class="w-8 h-8 bg-white/90 text-heart-500 rounded-full flex items-center justify-center text-sm font-bold hover:bg-white transition-colors shadow">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Save & Delete Functions
+function saveCampaign() {
+  const name = document.getElementById('campName').value.trim();
+  const status = document.getElementById('campStatus').value;
+  const desc = document.getElementById('campDesc').value.trim();
+  const progress = Math.min(100, Math.max(0, parseInt(document.getElementById('campProgress').value) || 0));
+  const location = document.getElementById('campLocation').value.trim();
+  const date = document.getElementById('campDate').value.trim();
+  const tagline = document.getElementById('campTagline').value.trim();
+  const colorBtn = document.querySelector('.color-opt.selected');
+  const color = colorBtn ? colorBtn.dataset.color : 'leaf';
+  const editId = document.getElementById('editCampaignId').value;
+  if (!name) { showToast('Please enter a campaign name.', 'warning'); return; }
+  if (!desc) { showToast('Please enter a description.', 'warning'); return; }
+  const data = { name, status, desc, progress: parseInt(progress), location, date, tagline, color, mainImage: tempMainImage, gallery: [...tempGallery], createdAt: Date.now() };
+  if (editId) {
+    db.collection("campaigns").doc(editId).update(data).then(() => showToast(`"${name}" updated! 🎉`, 'success'));
+  } else {
+    db.collection("campaigns").add(data).then(() => showToast(`"${name}" added! 🌱`, 'success'));
+  }
+  closeCampaignModal();
+}
+
+function confirmDeleteCampaign(id) { document.getElementById('delConfirm_' + id).classList.add('show'); }
+function cancelDelete(id) { document.getElementById('delConfirm_' + id).classList.remove('show'); }
+function deleteCampaign(id) {
+  db.collection("campaigns").doc(id).delete().then(() => showToast("Campaign deleted.", 'info'));
+  document.getElementById('delConfirm_' + id).classList.remove('show');
+}
+
+// Gallery View
+let currentGalleryCampaignId = '';
+let lightboxImages = [];
+let lightboxIndex = 0;
+
+function openGalleryView(id) {
+  const c = campaigns.find(x => x.id === id);
+  if (!c) return;
+  currentGalleryCampaignId = id;
+  const allImages = [];
+  if (c.mainImage) allImages.push({ src: c.mainImage, label: 'Main Image' });
+  (c.gallery || []).forEach((src, i) => allImages.push({ src, label: `Photo ${i+1}` }));
+  document.getElementById('galleryTitle').textContent = c.name + ' — Gallery';
+  document.getElementById('galleryCount').textContent = allImages.length + ' photo' + (allImages.length !== 1 ? 's' : '');
+  const grid = document.getElementById('galleryViewGrid');
+  if (!allImages.length) {
+    grid.innerHTML = `<div class="text-center py-16"><div class="text-5xl mb-3">📷</div><p class="text-gray-400 font-semibold">No photos yet</p></div>`;
+  } else {
+    grid.innerHTML = `<div class="grid grid-cols-2 sm:grid-cols-3 gap-4">${allImages.map((img, i) => `
+      <div class="relative group img-group rounded-2xl overflow-hidden aspect-square cursor-pointer" onclick="openLightbox(${i})">
+        <img src="${img.src}" class="w-full h-full object-cover gallery-thumb" alt="${img.label}">
+        <div class="img-overlay absolute inset-0 bg-black/40 flex items-end p-3">
+          <div class="flex items-center justify-between w-full">
+            <span class="text-white text-xs font-bold">${img.label}</span>
+            <button onclick="event.stopPropagation();removeGalleryImageFromView(${i})" class="w-7 h-7 bg-white/90 text-heart-500 rounded-full flex items-center justify-center text-xs font-bold hover:bg-white transition-colors shadow">✕</button>
+          </div>
+        </div>
+      </div>
+    `).join('')}</div>`;
+  }
+  document.getElementById('galleryModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  lightboxImages = allImages;
+  lucide.createIcons();
+}
+function closeGalleryModal() { document.getElementById('galleryModal').classList.remove('open'); document.body.style.overflow = ''; closeLightbox(); }
+
+function removeGalleryImageFromView(imgIndex) {
+  const c = campaigns.find(x => x.id === currentGalleryCampaignId);
+  if (!c) return;
+  const mainExists = !!c.mainImage;
+  if (mainExists && imgIndex === 0) { c.mainImage = ''; }
+  else { const galleryIdx = mainExists ? imgIndex - 1 : imgIndex; c.gallery.splice(galleryIdx, 1); }
+  db.collection("campaigns").doc(c.id).update({ mainImage: c.mainImage, gallery: c.gallery });
+  showToast('Photo removed.', 'info');
+}
+
+function openAddGalleryToCampaign() { document.getElementById('addMoreGalleryInput').click(); }
+function handleAddMoreGallery(e) {
+  const c = campaigns.find(x => x.id === currentGalleryCampaignId);
+  if (!c) return;
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+  let uploaded = 0;
+  files.forEach(file => {
+    uploadToFirebase(file, 'campaigns/gallery').then(url => {
+      if (!c.gallery) c.gallery = [];
+      c.gallery.push(url);
+      uploaded++;
+      if (uploaded === files.length) {
+        db.collection("campaigns").doc(c.id).update({ gallery: c.gallery });
+        showToast(`${files.length} photo(s) added! 📷`, 'success');
+      }
+    });
+  });
+  e.target.value = '';
+}
+
+// Lightbox
+function openLightbox(index) { lightboxIndex = index; updateLightbox(); document.getElementById('lightbox').classList.add('open'); }
+function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
+function updateLightbox() { if (!lightboxImages.length) return; document.getElementById('lightboxImg').src = lightboxImages[lightboxIndex].src; document.getElementById('lightboxCounter').textContent = `${lightboxIndex+1} / ${lightboxImages.length}`; }
+function lightboxPrev() { lightboxIndex = (lightboxIndex - 1 + lightboxImages.length) % lightboxImages.length; updateLightbox(); }
+function lightboxNext() { lightboxIndex = (lightboxIndex + 1) % lightboxImages.length; updateLightbox(); }
+document.addEventListener('keydown', e => { if (!document.getElementById('lightbox').classList.contains('open')) return; if (e.key === 'ArrowLeft') lightboxPrev(); if (e.key === 'ArrowRight') lightboxNext(); if (e.key === 'Escape') closeLightbox(); });
+
+// Campaign Filter Tabs
+document.querySelectorAll('.campaign-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.campaign-tab').forEach(t => { t.classList.remove('active','bg-leaf-600','text-white'); t.classList.add('bg-white','text-gray-600','border','border-gray-200'); });
+    tab.classList.add('active','bg-leaf-600','text-white'); tab.classList.remove('bg-white','text-gray-600','border','border-gray-200');
+    renderCampaigns(tab.dataset.filter);
+  });
+});
+
+// Other UI Functions
+const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+const closeMobileMenuBtn = document.getElementById('closeMobileMenu');
+const mobileMenuEl = document.getElementById('mobileMenu');
+mobileMenuBtn.addEventListener('click', () => mobileMenuEl.classList.add('open'));
+closeMobileMenuBtn.addEventListener('click', () => mobileMenuEl.classList.remove('open'));
+document.querySelectorAll('.mobile-nav-link').forEach(l => l.addEventListener('click', () => mobileMenuEl.classList.remove('open')));
+
+const navbarEl = document.getElementById('navbar');
+window.addEventListener('scroll', () => { navbarEl.classList.toggle('shadow-md', window.scrollY > 100); });
+
+const backToTopEl = document.getElementById('backToTop');
+window.addEventListener('scroll', () => {
+  if (window.scrollY > 600) { backToTopEl.style.opacity='1'; backToTopEl.style.transform='translateY(0)'; backToTopEl.style.pointerEvents='auto'; }
+  else { backToTopEl.style.opacity='0'; backToTopEl.style.transform='translateY(16px)'; backToTopEl.style.pointerEvents='none'; }
+});
+
+const revealObserver = new IntersectionObserver(entries => { entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('active'); }); }, { threshold:0.1, rootMargin:'0px 0px -50px 0px' });
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+function animateCounter(el, target, suffix='') { let c=0; const inc=Math.ceil(target/60); const t=setInterval(()=>{c+=inc;if(c>=target){c=target;clearInterval(t);}el.textContent=c.toLocaleString()+suffix;},30); }
+const counterObs = new IntersectionObserver(entries => { entries.forEach(e => { if(e.isIntersecting){const t=parseInt(e.target.dataset.target);if(t&&!e.target.dataset.counted){e.target.dataset.counted='true';animateCounter(e.target,t,'+');}}}); }, {threshold:0.5});
+document.querySelectorAll('.counter').forEach(el => counterObs.observe(el));
+
+let impactCounted=false;
+const impactObs = new IntersectionObserver(entries => { entries.forEach(e => { if(e.isIntersecting&&!impactCounted){impactCounted=true;animateCounter(document.getElementById('impactMeals'),1200,'+');animateCounter(document.getElementById('impactClothes'),800,'+');animateCounter(document.getElementById('impactKits'),350,'+');animateCounter(document.getElementById('impactSmiles'),500,'+');}}); }, {threshold:0.3});
+const impEl = document.getElementById('impactMeals'); if(impEl) impactObs.observe(impEl.parentElement.parentElement.parentElement);
+
+function spinLogo(el){const img=el.querySelector('img');img.style.transform='rotate(360deg)';setTimeout(()=>{img.style.transform='rotate(0deg)';},800);}
+
+function createHeroParticles(){const c=document.getElementById('heroParticles');const cols=['#86efac','#fde68a','#7dd3fc','#fca5a5','#c4b5fd'];for(let i=0;i<20;i++){const p=document.createElement('div');const col=cols[Math.floor(Math.random()*cols.length)];const sz=6+Math.random()*14;p.style.cssText=`position:absolute;left:${Math.random()*100}%;top:${20+Math.random()*60}%;width:${sz}px;height:${sz}px;opacity:${.15+Math.random()*.25};animation:floatLeaf ${8+Math.random()*12}s ease-in-out ${Math.random()*10}s infinite;pointer-events:none;`;p.innerHTML=`<svg viewBox="0 0 24 24" fill="${col}"><path d="M12 2C12 2 4 8 4 14c0 4 3.6 8 8 8s8-4 8-8C20 8 12 2 12 2z"/></svg>`;c.appendChild(p);}}
+createHeroParticles();
+
+let selectedAmount=25;
+const amountBtns=document.querySelectorAll('.amount-btn');
+const customWrap=document.getElementById('customAmountWrap');
+const donImpact=document.getElementById('donationImpact');
+const impactMsgs={5:{t:'Your $5 can:',d:'Provide a warm meal for <strong>1 child</strong> 🍞'},10:{t:'Your $10 can:',d:'Provide hygiene essentials for <strong>1 child</strong> 🧼'},25:{t:'Your $25 can:',d:'Provide a school kit for <strong>1 child</strong> 🎒'},50:{t:'Your $50 can:',d:'Clothe <strong>2 children</strong> with new outfits 👕'},100:{t:'Your $100 can:',d:'Sponsor a <strong>family</strong> for a month 🏠'},custom:{t:'Every amount helps:',d:'Your generosity will directly impact children in need 💝'}};
+amountBtns.forEach(b=>{b.addEventListener('click',()=>{amountBtns.forEach(x=>x.classList.remove('selected'));b.classList.add('selected');const a=b.dataset.amount;selectedAmount=a==='custom'?0:parseInt(a);if(a==='custom'){customWrap.classList.remove('hidden');donImpact.innerHTML=`<p class="text-sm font-bold text-leaf-800 mb-1">${impactMsgs.custom.t}</p><p class="text-sm text-leaf-600">${impactMsgs.custom.d}</p>`;}else{customWrap.classList.add('hidden');const m=impactMsgs[a];donImpact.innerHTML=`<p class="text-sm font-bold text-leaf-800 mb-1">${m.t}</p><p class="text-sm text-leaf-600">${m.d}</p>`;}});});
+
+const sugTypeBtns=document.querySelectorAll('.suggestion-type-btn');
+sugTypeBtns.forEach(b=>{b.addEventListener('click',()=>{sugTypeBtns.forEach(x=>{x.classList.remove('active','bg-sky-500','text-white');x.classList.add('bg-gray-100','text-gray-600');});b.classList.add('active','bg-sky-500','text-white');b.classList.remove('bg-gray-100','text-gray-600');});});
+
+function showToast(msg,type='success'){const c=document.getElementById('toastContainer');const t=document.createElement('div');const cols={success:'bg-leaf-600',error:'bg-heart-500',info:'bg-sky-500',warning:'bg-warm-500'};const icons={success:'✅',error:'❌',info:'ℹ️',warning:'⚠️'};t.className=`toast-in ${cols[type]} text-white px-5 py-4 rounded-2xl shadow-xl flex items-start gap-3 max-w-sm`;t.innerHTML=`<span class="text-lg flex-shrink-0">${icons[type]}</span><div><p class="font-bold text-sm">${type.charAt(0).toUpperCase()+type.slice(1)}</p><p class="text-sm opacity-90 mt-0.5">${msg}</p></div><button onclick="this.parentElement.classList.replace('toast-in','toast-out');setTimeout(()=>this.parentElement.remove(),400)" class="ml-auto flex-shrink-0 opacity-70 hover:opacity-100">✕</button>`;c.appendChild(t);setTimeout(()=>{if(t.parentElement){t.classList.replace('toast-in','toast-out');setTimeout(()=>t.remove(),400);}},5000);}
+
+function launchConfetti(){const cols=['#22c55e','#fbbf24','#38bdf8','#f43f5e','#a78bfa','#fb923c'];for(let i=0;i<50;i++){const p=document.createElement('div');p.className='confetti-piece';const sz=6+Math.random()*8;p.style.cssText=`left:${Math.random()*100}vw;width:${sz}px;height:${sz}px;background:${cols[Math.floor(Math.random()*cols.length)]};border-radius:${Math.random()>.5?'50%':'2px'};animation:confettiFall ${2+Math.random()*3}s linear ${Math.random()*.5}s forwards;`;document.body.appendChild(p);setTimeout(()=>p.remove(),5500);}}
+
+function handleDonate(){const n=document.getElementById('donorName').value.trim();const e=document.getElementById('donorEmail').value.trim();const a=selectedAmount===0?parseInt(document.getElementById('customAmount').value):selectedAmount;if(!n){showToast('Please enter your name.','warning');return;}if(!e||!e.includes('@')){showToast('Please enter a valid email.','warning');return;}if(!a||a<1){showToast('Please select or enter a valid amount.','warning');return;}const btn=document.getElementById('donateBtn');btn.innerHTML='<svg class="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity=".3"/><path d="M12 2a10 10 0 019.95 9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg> Processing...';btn.disabled=true;setTimeout(()=>{launchConfetti();showToast(`Thank you ${n}! Your $${a} donation will make a real difference. 💚`,'success');btn.innerHTML='<i data-lucide="check" class="w-5 h-5"></i> Donation Received!';btn.classList.remove('from-leaf-500','to-leaf-600');btn.classList.add('from-leaf-700','to-leaf-800');lucide.createIcons();setTimeout(()=>{btn.innerHTML='<i data-lucide="heart" class="w-5 h-5"></i> Donate Now';btn.classList.remove('from-leaf-700','to-leaf-800');btn.classList.add('from-leaf-500','to-leaf-600');btn.disabled=false;lucide.createIcons();},4000);},1500);}
+
+function handleSuggestion(){const n=document.getElementById('sugName').value.trim();const m=document.getElementById('sugMessage').value.trim();if(!n){showToast('Please enter your name.','warning');return;}if(!m){showToast('Please share your suggestion.','warning');return;}const type=document.querySelector('.suggestion-type-btn.active').dataset.type;const te={idea:'💡',feedback:'💬',campaign:'🎯',partnership:'🤝',other:'✨'};const tc={idea:'leaf',feedback:'sky',campaign:'warm',partnership:'purple',other:'gray'};const c=tc[type];const list=document.getElementById('suggestionsList');const item=document.createElement('div');item.className='bg-white rounded-2xl p-5 border border-gray-100 shadow-sm';item.style.opacity='0';item.style.transform='translateY(20px)';item.innerHTML=`<div class="flex items-start gap-3"><div class="w-8 h-8 bg-${c}-100 rounded-full flex items-center justify-center text-sm flex-shrink-0">${te[type]}</div><div class="flex-1"><div class="flex items-center gap-2 mb-1"><p class="font-bold text-sm text-gray-800">${n}</p><span class="bg-${c}-100 text-${c}-700 px-2 py-0.5 rounded-full text-[10px] font-bold capitalize">${type}</span><span class="bg-leaf-100 text-leaf-700 px-2 py-0.5 rounded-full text-[10px] font-bold">New</span></div><p class="text-sm text-gray-600">"${m}"</p><p class="text-xs text-gray-400 mt-2">Just now</p></div></div>`;list.insertBefore(item,list.firstChild);setTimeout(()=>{item.style.transition='all .5s ease-out';item.style.opacity='1';item.style.transform='translateY(0)';},50);showToast('Thank you for your suggestion! 🌱','success');document.getElementById('sugName').value='';document.getElementById('sugMessage').value='';}
+
+function handleContact(){const f=document.getElementById('contactFirst').value.trim();const l=document.getElementById('contactLast').value.trim();const e=document.getElementById('contactEmail').value.trim();const s=document.getElementById('contactSubject').value;const m=document.getElementById('contactMessage').value.trim();if(!f||!l){showToast('Please enter your full name.','warning');return;}if(!e||!e.includes('@')){showToast('Please enter a valid email.','warning');return;}if(!s){showToast('Please select a subject.','warning');return;}if(!m){showToast('Please write a message.','warning');return;}showToast(`Thank you ${f}! We'll get back to you within 24 hours. 📧`,'success');document.getElementById('contactFirst').value='';document.getElementById('contactLast').value='';document.getElementById('contactEmail').value='';document.getElementById('contactSubject').value='';document.getElementById('contactMessage').value='';}
+
+function handleNewsletter(){const e=document.getElementById('newsletterEmail').value.trim();if(!e||!e.includes('@')){showToast('Please enter a valid email.','warning');return;}showToast("You're subscribed! Welcome to the Growing Minds family. 🌿",'success');document.getElementById('newsletterEmail').value='';}
+
+const sections=document.querySelectorAll('section[id]');const navLinks=document.querySelectorAll('.nav-link');
+window.addEventListener('scroll',()=>{let cur='';sections.forEach(s=>{if(window.scrollY>=s.offsetTop-150)cur=s.getAttribute('id');});navLinks.forEach(l=>{l.classList.remove('active');if(l.getAttribute('href')===`#${cur}`)l.classList.add('active');});});
+
+// Initial Load
+loadCampaignsFromFirestore();
+lucide.createIcons();
+</script>
+</body>
+</html>
